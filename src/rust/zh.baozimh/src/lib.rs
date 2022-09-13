@@ -6,6 +6,7 @@ use aidoku::{
 	std::{
 		defaults::defaults_get,
 		format,
+		html::Node,
 		net::{HttpMethod, Request},
 		print, String, StringRef, Vec,
 	},
@@ -22,12 +23,10 @@ const POPULAR_MANGA_SELECTOR: &str = "div.pure-g div.comics-card";
 fn get_manga_list(filters: Vec<Filter>, page: i32) -> Result<MangaPageResult> {
 	print("get_manga_list");
 
-	let base_url = defaults_get("mirror")?
-		.as_string()
-		.unwrap_or_else(|_| StringRef::from(""))
-		.read();
-
 	let url = get_manga_list_url(filters, page)?;
+	print("url:");
+	print(&url);
+
 	let html = Request::new(url, HttpMethod::Get).html()?;
 
 	let mut manga_arr: Vec<Manga> = Vec::new();
@@ -39,43 +38,17 @@ fn get_manga_list(filters: Vec<Filter>, page: i32) -> Result<MangaPageResult> {
 
 	for item in html.select(POPULAR_MANGA_SELECTOR).array() {
 		match item.as_node() {
-			Ok(n) => {
-				let poster = n.select("> a.comics-card__poster");
-				let info = n.select("> a.comics-card__info");
-
-				let href = poster.attr("href").read();
-				let cover = poster.select("> amp-img").attr("src").read();
-				let id = href.replace("/comic/", "");
-
-				let title = info.select("> .comics-card__title").text().read();
-				let author = info.select("> .tags").text().read();
-
-				let mut categories = Vec::new();
-
-				for t in poster.select("span.tab").array() {
-					match t.as_node() {
-						Ok(n) => {
-							categories.push(String::from(n.text().read().trim()));
-						}
-						Err(_) => continue,
-					};
+			Ok(n) => match parse_popular_manga(n) {
+				Ok(m) => manga_arr.push(m),
+				Err(_) => {
+					print("parse_popular_manga error");
+					continue;
 				}
-
-				manga_arr.push(Manga {
-					id,
-					cover,
-					title,
-					author,
-					artist: String::from(""),
-					description: String::from(""),
-					url: format(format_args!("{}{}", base_url, href)),
-					categories,
-					status: MangaStatus::Unknown,
-					nsfw: MangaContentRating::Safe,
-					viewer: MangaViewer::Scroll,
-				});
+			},
+			Err(_) => {
+				print("item.as_node error");
+				continue;
 			}
-			Err(_) => continue,
 		}
 	}
 
@@ -108,9 +81,7 @@ fn get_page_list(manga_id: String, chapter_id: String) -> Result<Vec<Page>> {
 }
 
 #[modify_image_request]
-fn modify_image_request(request: Request) {
-	todo!()
-}
+fn modify_image_request(_: Request) {}
 
 #[handle_url]
 fn handle_url(url: String) -> Result<DeepLink> {
@@ -162,6 +133,13 @@ fn get_manga_list_url(filters: Vec<Filter>, page: i32) -> Result<String> {
 		.unwrap_or_else(|_| StringRef::from(""))
 		.read();
 
+	if !title.is_empty() {
+		url.push_str("/search?q=");
+		url.push_str(&helper::urlencode(title));
+
+		return Ok(url);
+	}
+
 	url.push_str("/classify?page=");
 	url.push_str(&helper::i32_to_string(page));
 	url.push('&');
@@ -189,8 +167,47 @@ fn get_manga_list_url(filters: Vec<Filter>, page: i32) -> Result<String> {
 		url.push_str(&start);
 	}
 
-	print("url:");
-	print(&url);
-
 	Ok(url)
+}
+
+fn parse_popular_manga(node: Node) -> Result<Manga> {
+	let base_url = defaults_get("mirror")?
+		.as_string()
+		.unwrap_or_else(|_| StringRef::from(""))
+		.read();
+
+	let poster = node.select("> a.comics-card__poster");
+	let info = node.select("> a.comics-card__info");
+
+	let href = poster.attr("href").read();
+	let cover = poster.select("> amp-img").attr("src").read();
+	let id = href.replace("/comic/", "");
+
+	let title = info.select("> .comics-card__title").text().read();
+	let author = info.select("> .tags").text().read();
+
+	let mut categories = Vec::new();
+
+	for t in poster.select("span.tab").array() {
+		match t.as_node() {
+			Ok(n) => {
+				categories.push(String::from(n.text().read().trim()));
+			}
+			Err(_) => continue,
+		};
+	}
+
+	Ok(Manga {
+		id,
+		cover,
+		title,
+		author,
+		artist: String::from(""),
+		description: String::from(""),
+		url: format(format_args!("{}{}", base_url, href)),
+		categories,
+		status: MangaStatus::Unknown,
+		nsfw: MangaContentRating::Safe,
+		viewer: MangaViewer::Scroll,
+	})
 }
