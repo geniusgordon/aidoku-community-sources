@@ -1,49 +1,100 @@
 [
-	{
-		"type": "title"
-	},
-	{
-		"type": "author"
-	},
-	{
-		"type": "group",
-		"name": "A group filter",
-		"filters": [
-			{
-				"type": "check",
-				"name": "A checkbox",
-				"default": true
-			}
-		]
-	},
-	{
-		"type": "group",
-		"name": "Another group filter",
-		"filters": [
-			{
-				"type": "genre",
-				"name": "A genre",
-				"canExclude": true
-			}
-		]
-	},
-	{
-		"type": "select",
-		"name": "A select filter",
-		"options": [
-
-		]
-	},
-	{
-		"type": "sort",
-		"name": "A sorter",
-		"canAscend": true,
-		"options": [
-
-		],
-		"default": {
-			"index": 0,
-			"ascending": false
-		}
-	}
+  {
+    "type": "title"
+  },
+  {
+    "type": "select",
+    "name": "分类",
+    "options": [
+      "全部",
+      "都市",
+      "冒险",
+      "热血",
+      "恋爱",
+      "耽美",
+      "武侠",
+      "格斗",
+      "科幻",
+      "魔幻",
+      "推理",
+      "玄幻",
+      "日常",
+      "生活",
+      "搞笑",
+      "校园",
+      "奇幻",
+      "萌系",
+      "穿越",
+      "后宫",
+      "战争",
+      "历史",
+      "剧情",
+      "同人",
+      "竞技",
+      "励志",
+      "治愈",
+      "机甲",
+      "纯爱",
+      "美食",
+      "恶搞",
+      "虐心",
+      "动作",
+      "惊险",
+      "唯美",
+      "复仇",
+      "脑洞",
+      "宫斗",
+      "运动",
+      "灵异",
+      "古风",
+      "权谋",
+      "节操",
+      "明星",
+      "暗黑",
+      "社会",
+      "音乐舞蹈",
+      "东方",
+      "AA",
+      "悬疑",
+      "轻小说",
+      "霸总",
+      "萝莉",
+      "战斗",
+      "惊悚",
+      "百合",
+      "大女主",
+      "幻想",
+      "少女",
+      "少年",
+      "性转",
+      "重生",
+      "韩漫",
+      "其它"
+    ]
+  },
+  {
+    "type": "select",
+    "name": "地区",
+    "options": ["全部", "国漫", "日本", "韩国", "欧美"]
+  },
+  {
+    "type": "select",
+    "name": "状态",
+    "options": ["全部", "连载中", "已完结"]
+  },
+  {
+    "type": "select",
+    "name": "标题开头",
+    "options": [
+      "全部",
+      "ABCD",
+      "EFGH",
+      "IJKL",
+      "MNOP",
+      "QRST",
+      "UVW",
+      "XYZ",
+      "0-9"
+    ]
+  }
 ]

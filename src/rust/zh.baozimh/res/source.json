@@ -1,13 +1,11 @@
 {
-	"info": {
-		"id": "zh.baozimh",
-		"lang": "zh",
-		"name": "baozimh",
-		"version": 1,
-		"url": "https://www.baozimh.com/",
-		"nsfw": 1
-	},
-	"listings": [
-
-	]
+  "info": {
+    "id": "zh.baozimh",
+    "lang": "zh",
+    "name": "包子漫画",
+    "version": 1,
+    "url": "https://www.baozimh.com/",
+    "nsfw": 1
+  },
+  "listings": []
 }
