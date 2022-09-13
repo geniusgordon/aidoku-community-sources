@@ -67,7 +67,62 @@ fn get_manga_listing(listing: Listing, page: i32) -> Result<MangaPageResult> {
 
 #[get_manga_details]
 fn get_manga_details(id: String) -> Result<Manga> {
-	todo!()
+	print(format(format_args!("get_manga_details: {}", id)));
+
+	let mut url = defaults_get("mirror")?.as_string()?.read();
+	url.push_str("/comic/");
+	url.push_str(&id);
+
+	print("url:");
+	print(&url);
+
+	let html = Request::new(String::from(&url), HttpMethod::Get).html()?;
+
+	let title = html.select("h1.comics-detail__title").text().read();
+	let cover = html.select("div.pure-g div > amp-img").attr("src").read();
+	let author = html.select("h2.comics-detail__author").text().read();
+	let description = html.select("p.comics-detail__desc").text().read();
+
+	let status = match html
+		.select("div.tag-list > span.tag:first-child")
+		.text()
+		.read()
+		.trim()
+	{
+		"连载中" => MangaStatus::Ongoing,
+		"已完结" => MangaStatus::Completed,
+		"連載中" => MangaStatus::Ongoing,
+		"已完結" => MangaStatus::Completed,
+		_ => MangaStatus::Unknown,
+	};
+
+	let mut categories = Vec::new();
+
+	for t in html
+		.select("div.tag-list > span.tag:not(:first-child)")
+		.array()
+	{
+		match t.as_node() {
+			Ok(n) => {
+				categories.push(String::from(n.text().read().trim()));
+			}
+			Err(_) => continue,
+		};
+	}
+
+	Ok(Manga {
+		id,
+		cover: String::from(cover),
+		title: String::from(title),
+		author: String::from(author),
+		artist: String::from(""),
+		description: String::from(description),
+		url: String::from(&url),
+		categories,
+		status,
+		nsfw: MangaContentRating::Safe,
+		viewer: MangaViewer::Scroll,
+	})
 }
 
 #[get_chapter_list]
@@ -128,10 +183,7 @@ fn get_manga_list_url(filters: Vec<Filter>, page: i32) -> Result<String> {
 	print(&status);
 	print(&start);
 
-	let mut url = defaults_get("mirror")?
-		.as_string()
-		.unwrap_or_else(|_| StringRef::from(""))
-		.read();
+	let mut url = defaults_get("mirror")?.as_string()?.read();
 
 	if !title.is_empty() {
 		url.push_str("/search?q=");
@@ -171,10 +223,7 @@ fn get_manga_list_url(filters: Vec<Filter>, page: i32) -> Result<String> {
 }
 
 fn parse_popular_manga(node: Node) -> Result<Manga> {
-	let base_url = defaults_get("mirror")?
-		.as_string()
-		.unwrap_or_else(|_| StringRef::from(""))
-		.read();
+	let base_url = defaults_get("mirror")?.as_string()?.read();
 
 	let poster = node.select("> a.comics-card__poster");
 	let info = node.select("> a.comics-card__info");
