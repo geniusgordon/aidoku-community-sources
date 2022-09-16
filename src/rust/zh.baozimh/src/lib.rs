@@ -8,7 +8,7 @@ use aidoku::{
 		format,
 		html::Node,
 		net::{HttpMethod, Request},
-		print, String, StringRef, Vec,
+		print, String, Vec,
 	},
 	Chapter, DeepLink, Filter, FilterType, Listing, Manga, MangaContentRating, MangaPageResult,
 	MangaStatus, MangaViewer, Page,
@@ -61,7 +61,7 @@ fn get_manga_list(filters: Vec<Filter>, page: i32) -> Result<MangaPageResult> {
 }
 
 #[get_manga_listing]
-fn get_manga_listing(listing: Listing, page: i32) -> Result<MangaPageResult> {
+fn get_manga_listing(_: Listing, _: i32) -> Result<MangaPageResult> {
 	todo!()
 }
 
@@ -112,11 +112,11 @@ fn get_manga_details(id: String) -> Result<Manga> {
 
 	Ok(Manga {
 		id,
-		cover: String::from(cover),
-		title: String::from(title),
-		author: String::from(author),
+		cover,
+		title,
+		author,
 		artist: String::from(""),
-		description: String::from(description),
+		description,
 		url: String::from(&url),
 		categories,
 		status,
@@ -127,19 +127,112 @@ fn get_manga_details(id: String) -> Result<Manga> {
 
 #[get_chapter_list]
 fn get_chapter_list(id: String) -> Result<Vec<Chapter>> {
-	todo!()
+	print(format(format_args!("get_chapter_list: {}", id)));
+
+	let mut url = defaults_get("mirror")?.as_string()?.read();
+	url.push_str("/comic/");
+	url.push_str(&id);
+
+	print("url:");
+	print(&url);
+
+	let html = Request::new(String::from(&url), HttpMethod::Get).html()?;
+
+	let section_count = html.select(".l-box > .pure-g").array().count();
+
+	let chapters = match section_count {
+		1 => html.select(".l-box > .pure-g > div"),
+		_ => html.select(".l-box > .pure-g[id^=chapter] > div"),
+	};
+
+	let mut chapter_arr: Vec<Chapter> = Vec::new();
+
+	let mut i = 1;
+
+	for ch in chapters.array() {
+		match ch.as_node() {
+			Ok(n) => {
+				let title = n.text().read();
+				let href = n.select("a").attr("href").read();
+
+				// print(format(format_args!("title: {}", title)));
+
+				let mut url = defaults_get("mirror")?.as_string()?.read();
+				url.push_str(&href);
+
+				// print(&url);
+
+				chapter_arr.push(Chapter {
+					id: href,
+					title,
+					volume: -1.0,
+					chapter: i as f32,
+					date_updated: -1.0,
+					scanlator: String::from(""),
+					url,
+					lang: String::from("zh"),
+				});
+			}
+			Err(_) => {
+				print(format(format_args!("error: {}", i)));
+				continue;
+			}
+		}
+
+		i += 1;
+	}
+
+	if section_count > 1 {
+		chapter_arr.reverse();
+	}
+
+	Ok(chapter_arr)
 }
 
 #[get_page_list]
 fn get_page_list(manga_id: String, chapter_id: String) -> Result<Vec<Page>> {
-	todo!()
+	print(format(format_args!(
+		"manga: {}, chapter: {}",
+		manga_id, chapter_id
+	)));
+
+	let mut url = defaults_get("mirror")?.as_string()?.read();
+	url.push_str(&chapter_id);
+
+	print("url:");
+	print(&url);
+
+	let html = Request::new(String::from(&url), HttpMethod::Get).html()?;
+
+	let mut i = 0;
+	let mut page_arr: Vec<Page> = Vec::new();
+
+	for img in html.select("[id^=chapter-img]").array() {
+		match img.as_node() {
+			Ok(n) => {
+				let src = n.attr("src").read();
+
+				page_arr.push(Page {
+					index: i,
+					url: src,
+					base64: String::from(""),
+					text: String::from(""),
+				});
+
+				i += 1;
+			}
+			Err(_) => continue,
+		};
+	}
+
+	Ok(page_arr)
 }
 
 #[modify_image_request]
 fn modify_image_request(_: Request) {}
 
 #[handle_url]
-fn handle_url(url: String) -> Result<DeepLink> {
+fn handle_url(_: String) -> Result<DeepLink> {
 	todo!()
 }
 
