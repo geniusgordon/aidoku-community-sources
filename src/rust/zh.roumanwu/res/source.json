@@ -1,13 +1,11 @@
 {
-	"info": {
-		"id": "zh.roumanwu",
-		"lang": "zh",
-		"name": "roumanwu",
-		"version": 1,
-		"url": "https://rouman5.com/home",
-		"nsfw": 2
-	},
-	"listings": [
-
-	]
+  "info": {
+    "id": "zh.roumanwu",
+    "lang": "zh",
+    "name": "肉漫屋",
+    "version": 1,
+    "url": "https://rouman5.com/home",
+    "nsfw": 2
+  },
+  "listings": []
 }
