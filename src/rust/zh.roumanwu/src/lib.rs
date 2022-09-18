@@ -7,7 +7,7 @@ use aidoku::{
 	std::{
 		format, json,
 		net::{HttpMethod, Request},
-		print, ArrayRef, ObjectRef, String, Vec,
+		print, ObjectRef, String, Vec,
 	},
 	Chapter, DeepLink, Filter, FilterType, Listing, Manga, MangaContentRating, MangaPageResult,
 	MangaStatus, MangaViewer, Page,
@@ -75,17 +75,85 @@ fn get_manga_listing(_: Listing, _: i32) -> Result<MangaPageResult> {
 
 #[get_manga_details]
 fn get_manga_details(id: String) -> Result<Manga> {
-	todo!()
+	let url = format(format_args!("{}/books/{}", BASE_URL, id));
+	print(&url);
+
+	let html = Request::new(&url, HttpMethod::Get).html()?;
+
+	let json_text = html.select("#__NEXT_DATA__").html().read();
+	let json = json::parse(json_text)?.as_object()?;
+	let props = json.get("props").as_object()?;
+	let data = props.get("pageProps").as_object()?;
+
+	let book = data.get("book").as_object()?;
+
+	Ok(book_to_manga(book)?)
 }
 
 #[get_chapter_list]
 fn get_chapter_list(id: String) -> Result<Vec<Chapter>> {
-	todo!()
+	let url = format(format_args!("{}/books/{}", BASE_URL, id));
+	print(&url);
+
+	let html = Request::new(&url, HttpMethod::Get).html()?;
+
+	let json_text = html.select("#__NEXT_DATA__").html().read();
+	let json = json::parse(json_text)?.as_object()?;
+	let props = json.get("props").as_object()?;
+	let data = props.get("pageProps").as_object()?;
+
+	let book = data.get("book").as_object()?;
+	let active_resource = book.get("activeResource").as_object()?;
+	let chapters = active_resource.get("chapters").as_array()?;
+
+	let mut chapter_arr: Vec<Chapter> = Vec::new();
+
+	for (i, ch) in chapters.enumerate() {
+		chapter_arr.push(Chapter {
+			id: format(format_args!("{}", i)),
+			title: ch.as_string()?.read(),
+			volume: -1.0,
+			chapter: (i + 1) as f32,
+			date_updated: -1.0,
+			scanlator: String::from(""),
+			url: format(format_args!("{}/books/{}/{}", BASE_URL, id, i)),
+			lang: String::from("zh"),
+		})
+	}
+
+	chapter_arr.reverse();
+	Ok(chapter_arr)
 }
 
 #[get_page_list]
 fn get_page_list(manga_id: String, chapter_id: String) -> Result<Vec<Page>> {
-	todo!()
+	let url = format(format_args!(
+		"{}/books/{}/{}",
+		BASE_URL, manga_id, chapter_id
+	));
+	print(&url);
+
+	let html = Request::new(&url, HttpMethod::Get).html()?;
+
+	let json_text = html.select("#__NEXT_DATA__").html().read();
+	let json = json::parse(json_text)?.as_object()?;
+	let props = json.get("props").as_object()?;
+	let data = props.get("pageProps").as_object()?;
+
+	let images = data.get("images").as_array()?;
+
+	let mut page_arr: Vec<Page> = Vec::new();
+
+	for (i, img) in images.enumerate() {
+		page_arr.push(Page {
+			index: i as i32,
+			url: img.as_object()?.get("src").as_string()?.read(),
+			base64: String::from(""),
+			text: String::from(""),
+		})
+	}
+
+	Ok(page_arr)
 }
 
 #[modify_image_request]

@@ -493,7 +493,7 @@ fn parse_page(chapter: &ObjectRef) -> Vec<Page> {
 				// print(&url);
 
 				page_arr.push(Page {
-					index: (i + 1) as i32,
+					index: i as i32,
 					url,
 					base64: String::from(""),
 					text: String::from(""),
